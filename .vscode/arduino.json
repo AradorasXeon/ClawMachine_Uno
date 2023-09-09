@@ -1,0 +1,5 @@
+{
+    "board": "arduino:avr:uno",
+    "sketch": "ClawMachine_Uno.ino",
+    "port": "/dev/ttyUSB0"
+}
