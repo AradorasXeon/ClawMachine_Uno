@@ -18,7 +18,9 @@
 
 const int TIME = 500;
 const int MICROTIME = 1500; //suggestion in the video: 700-3000
-const int stepCount = 1000; //100 step is about 1/4 revolution, at least it seems that way
+const int stepCount = 100; //100 step is about 1/4 revolution, at least it seems that way
+
+unsigned long loopCount = 0;
 
 void myDelay(unsigned long ms)
 {
@@ -77,8 +79,6 @@ void setup()
 
 void loop() 
 {
-  Serial.write("A");
-
 //Test mode:
   digitalWrite(STEP_DIR_X, HIGH);
   digitalWrite(STEP_DIR_Y, HIGH);                    
@@ -97,17 +97,13 @@ void loop()
     digitalWrite(STEP_PIN_Z, LOW);
     delayMicroseconds(MICROTIME);
   }
-  Serial.println("B");
-  Serial.println(millis());
-  myDelay(TIME);
-  Serial.println(millis());
 
-  Serial.write("C");
+  myDelay(TIME);
+
   digitalWrite(STEP_DIR_X, LOW);
   digitalWrite(STEP_DIR_Y, LOW);                    
   digitalWrite(STEP_DIR_Z, LOW);
   digitalWrite(LED_BUILTIN, LOW);
-
 
   for(int i = 0; i<stepCount; i++)
   {
@@ -121,11 +117,11 @@ void loop()
     delayMicroseconds(MICROTIME);
   }   
 
-  Serial.println("D");
   myDelay(TIME);
   Serial.println(millis());
+  Serial.println(loopCount);
 
-
+  loopCount++;
 }
 
 
