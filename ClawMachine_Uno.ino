@@ -18,7 +18,7 @@
 
 const int TIME = 1500;
 const int MICROTIME = 1500; //suggestion in the video: 700-3000
-const int stepCount = 100; //100 step is about 1/4 revolution, at least it seems that way
+const int stepCount = 1000; //100 step is about 1/4 revolution, at least it seems that way
 
 
 void setup() 
@@ -90,6 +90,8 @@ void loop()
 
     delayMicroseconds(MICROTIME);
   }   
+
+  delay(TIME);
 
 }
 
