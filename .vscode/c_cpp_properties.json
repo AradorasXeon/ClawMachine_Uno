@@ -16,6 +16,7 @@
             "includePath": [
                 "/home/krisztian/.arduino15/packages/MiniCore/hardware/avr/2.2.2/cores/MCUdude_corefiles",
                 "/home/krisztian/.arduino15/packages/MiniCore/hardware/avr/2.2.2/variants/pb-variant",
+                "/home/krisztian/.arduino15/packages/MiniCore/hardware/avr/2.2.2/libraries/Wire/src",
                 "/home/krisztian/.arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/lib/gcc/avr/7.3.0/include",
                 "/home/krisztian/.arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/lib/gcc/avr/7.3.0/include-fixed",
                 "/home/krisztian/.arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/avr/include"
