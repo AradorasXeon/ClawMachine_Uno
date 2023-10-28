@@ -17,21 +17,19 @@
 #define LIMIT_Y 10
 #define LIMIT_Z 11
 
+#define X_DIRECTION_STEP_COUNT 30
+#define Y_DIRECTION_STEP_COUNT 40
+#define Z_DIRECTION_STEP_COUNT 1500
 
-#define X_DIRECTION_STEP_COUNT 3
-#define Y_DIRECTION_STEP_COUNT 3
-#define Z_DIRECTION_STEP_COUNT 3
+//suggestion in the video: 700-3000, this sets the amount of microseconds between triggering the stepper's input signal
 
-
-
-//const int TIME = 1500;
-const int MICROTIME = 1500; //suggestion in the video: 700-3000, this sets the amount of microseconds between triggering the stepper's input signal
-//const int stepCount = 1000; //100 step is about 1/4 revolution, at least it seems that way
+#define X_MICRO_TIME 3000
+#define Y_MICRO_TIME 3000
+#define Z_MICRO_TIME 3000
 
 Move* Move::instance = nullptr; //have to be 'assigned'
 Move msgMove(false);
 bool limiterStates[3];
-
 
 void setup() 
 {
@@ -68,9 +66,9 @@ void moveLeft(uint16_t stepCount)
   {
     if (limiterStates[0] != 0 ) break;
     digitalWrite(STEP_PIN_X, HIGH);
-    delayMicroseconds(MICROTIME);
+    delayMicroseconds(X_MICRO_TIME);
     digitalWrite(STEP_PIN_X, LOW);
-    delayMicroseconds(MICROTIME);
+    delayMicroseconds(X_MICRO_TIME);
   }
 }
 
@@ -81,9 +79,9 @@ void moveRight(uint16_t stepCount)
   {
     if (limiterStates[0] != 0 ) break;
     digitalWrite(STEP_PIN_X, HIGH);
-    delayMicroseconds(MICROTIME);
+    delayMicroseconds(X_MICRO_TIME);
     digitalWrite(STEP_PIN_X, LOW);
-    delayMicroseconds(MICROTIME);
+    delayMicroseconds(X_MICRO_TIME);
   }
 }
 
@@ -94,9 +92,9 @@ void moveUp(uint16_t stepCount)
   {
     if (limiterStates[1] != 0 ) break;
     digitalWrite(STEP_PIN_Y, HIGH);
-    delayMicroseconds(MICROTIME);
+    delayMicroseconds(Y_MICRO_TIME);
     digitalWrite(STEP_PIN_Y, LOW);
-    delayMicroseconds(MICROTIME);
+    delayMicroseconds(Y_MICRO_TIME);
   }
 }
 
@@ -107,9 +105,9 @@ void moveDown(uint16_t stepCount)
   {
     if (limiterStates[1] != 0 ) break;
     digitalWrite(STEP_PIN_Y, HIGH);
-    delayMicroseconds(MICROTIME);
+    delayMicroseconds(Y_MICRO_TIME);
     digitalWrite(STEP_PIN_Y, LOW);
-    delayMicroseconds(MICROTIME);
+    delayMicroseconds(Y_MICRO_TIME);
   }
 }
 
@@ -119,9 +117,9 @@ void moveClawUp(uint16_t stepCount)
   for(int i = 0; i<stepCount; i++)
   {
     digitalWrite(STEP_PIN_Z, HIGH);
-    delayMicroseconds(MICROTIME);
+    delayMicroseconds(Z_MICRO_TIME);
     digitalWrite(STEP_PIN_Z, LOW);
-    delayMicroseconds(MICROTIME);
+    delayMicroseconds(Z_MICRO_TIME);
   }
 }
 
@@ -131,9 +129,9 @@ void moveClawDown(uint16_t stepCount)
   for(int i = 0; i<stepCount; i++)
   {
     digitalWrite(STEP_PIN_Z, HIGH);
-    delayMicroseconds(MICROTIME);
+    delayMicroseconds(Z_MICRO_TIME);
     digitalWrite(STEP_PIN_Z, LOW);
-    delayMicroseconds(MICROTIME);
+    delayMicroseconds(Z_MICRO_TIME);
   }
 }
 
