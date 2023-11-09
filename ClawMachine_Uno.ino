@@ -19,7 +19,7 @@
 
 #define X_DIRECTION_STEP_COUNT 30
 #define Y_DIRECTION_STEP_COUNT 40
-#define Z_DIRECTION_STEP_COUNT 1500
+#define Z_DIRECTION_STEP_COUNT 800
 int zDirectionMaxStepCountRange = 3000; //can be calibrated
 
 
@@ -59,6 +59,8 @@ void setup()
 
   msgMove.instance = &msgMove;
   Wire.onReceive(Move::onReceiveCallBack);
+  Wire.onRequest(requestEvent);
+
 }
 
 void moveLeft(uint16_t stepCount)
@@ -150,12 +152,25 @@ void moveHome()
   }
 }
 
+bool containsGivenBits(uint8_t inThis, uint8_t contained)
+{
+  uint8_t temp = inThis & contained;
+  if(temp == contained)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
 void calibration()
 {
-  while(msgMove.getClawCalibState() == Claw_Calibration::CLAW_CALIB_INIT)
+  while(msgMove.getClawCalibState() < (Claw_Calibration::CLAW_CALIB_TOP_DONE | Claw_Calibration::CLAW_CALIB_DOWN_DONE )) //if calib done top and down are set they are the biggest number possible
   {
     //setting the top position for the claw since it does not have a limiter
-    while(msgMove.getClawCalibState() == Claw_Calibration::CLAW_CALIB_TOP_STATE_IN_PROGRESS)
+    while(containsGivenBits(msgMove.getClawCalibState(), Claw_Calibration::CLAW_CALIB_TOP_STATE_IN_PROGRESS))
     {
       if (msgMove.getY() == Y_Direction::UP)
       {
@@ -168,18 +183,21 @@ void calibration()
       if (msgMove.getButtonState() == Main_Button::PUSHED)
       {
         msgMove.topCalibDone();
-        msgMove.sendMsgToNano(); //not yet implemented
+        //msgMove.sendMsgToNano(); //not yet implemented
+        //we are done with the Top position calibration:
+        zDirectionMaxStepCountRange = 0;
       }
-      delay(1);
+
+      msgMove.setDefaultValues(); //making sure that if we loose connection, everything stops
     }
 
-    //we are done with the Top position calibration:
-    zDirectionMaxStepCountRange = 0;
+    //calib state is constantly read from NANO side
+    
     //msgMove.startDownCalib(); SHOULD BE DONE FROM NANO SIDE, IT ALSO NEEDS COUNTING FOR TIME ESTIMATION
     //msgMove.sendMsgToNano();
     //delay(1);
 
-    while(msgMove.getClawCalibState() == Claw_Calibration::CLAW_CALIB_DOWN_STATE_IN_PROGRESS)
+    while(containsGivenBits(msgMove.getClawCalibState(), Claw_Calibration::CLAW_CALIB_DOWN_STATE_IN_PROGRESS))
     {
       if (msgMove.getY() == Y_Direction::UP)
       {
@@ -196,19 +214,25 @@ void calibration()
         if(zDirectionMaxStepCountRange > 0)
         {
           msgMove.downCalibDone();
-          msgMove.sendMsgToNano();
+          //msgMove.sendMsgToNano();
         }
         else
         {
           msgMove.setBadCalibState(); //unset should be done from NANO side
-          msgMove.sendMsgToNano();
+          //msgMove.sendMsgToNano();
         }
       }
-      delay(1);
+      msgMove.setDefaultValues(); //making sure that if we loose connection, everything stops
     }
-
     //finish calib should be done from NANO side
   }
+}
+
+void requestEvent()
+{
+  msgMove.refreshMovementState(zDirectionMaxStepCountRange);
+  MovementDataPack toBeSent = msgMove.getMovementState();
+  Wire.write((byte*)&toBeSent, sizeof(MovementDataPack));
 }
 
 void loop() 
