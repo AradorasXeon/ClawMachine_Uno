@@ -19,7 +19,7 @@
 
 #define X_DIRECTION_STEP_COUNT 30
 #define Y_DIRECTION_STEP_COUNT 40
-#define Z_DIRECTION_STEP_COUNT 800
+#define Z_DIRECTION_STEP_COUNT 80
 int zDirectionMaxStepCountRange = 3000; //can be calibrated
 
 
