@@ -2,6 +2,9 @@
 
 #include <Wire.h>
 #include "/home/krisztian/arduino/ClawMachine_Nano/communication.h"
+#include "/home/krisztian/arduino/ClawMachine_Nano/timer.h"
+//#include "/home/krisztian/arduino/ClawMachine_Nano/millisTimer.h"
+
 
 #define STEP_PIN_X 2
 #define STEP_PIN_Y 3
@@ -27,7 +30,12 @@ int zDirectionMaxStepCountRange = 3000; //can be calibrated
 
 #define X_MICRO_TIME 3000
 #define Y_MICRO_TIME 3000
-#define Z_MICRO_TIME 3000
+#define Z_MICRO_TIME 800
+
+Timer xTimer(X_MICRO_TIME);
+Timer yTimer(Y_MICRO_TIME);
+Timer zTimer(Z_MICRO_TIME);
+
 
 Move* Move::instance = nullptr; //have to be 'assigned'
 Move msgMove(false);
@@ -61,6 +69,8 @@ void setup()
   Wire.onReceive(Move::onReceiveCallBack);
   Wire.onRequest(requestEvent);
 
+  //Debug:
+  Serial.begin(115200);
 }
 
 void moveLeft(uint16_t stepCount)
@@ -70,9 +80,9 @@ void moveLeft(uint16_t stepCount)
   {
     if (limiterStates[0] != 0 ) break;
     digitalWrite(STEP_PIN_X, HIGH);
-    delayMicroseconds(X_MICRO_TIME);
+    xTimer.doDelay();
     digitalWrite(STEP_PIN_X, LOW);
-    delayMicroseconds(X_MICRO_TIME);
+    xTimer.doDelay();
   }
 }
 
@@ -83,9 +93,9 @@ void moveRight(uint16_t stepCount)
   {
     if (limiterStates[0] != 0 ) break;
     digitalWrite(STEP_PIN_X, HIGH);
-    delayMicroseconds(X_MICRO_TIME);
+    xTimer.doDelay();
     digitalWrite(STEP_PIN_X, LOW);
-    delayMicroseconds(X_MICRO_TIME);
+    xTimer.doDelay();
   }
 }
 
@@ -96,9 +106,9 @@ void moveUp(uint16_t stepCount)
   {
     if (limiterStates[1] != 0 ) break;
     digitalWrite(STEP_PIN_Y, HIGH);
-    delayMicroseconds(Y_MICRO_TIME);
+    yTimer.doDelay();
     digitalWrite(STEP_PIN_Y, LOW);
-    delayMicroseconds(Y_MICRO_TIME);
+    yTimer.doDelay();
   }
 }
 
@@ -109,9 +119,9 @@ void moveDown(uint16_t stepCount)
   {
     if (limiterStates[1] != 0 ) break;
     digitalWrite(STEP_PIN_Y, HIGH);
-    delayMicroseconds(Y_MICRO_TIME);
+    yTimer.doDelay();
     digitalWrite(STEP_PIN_Y, LOW);
-    delayMicroseconds(Y_MICRO_TIME);
+    yTimer.doDelay();
   }
 }
 
@@ -121,9 +131,9 @@ void moveClawUp(uint16_t stepCount)
   for(int i = 0; i<stepCount; i++)
   {
     digitalWrite(STEP_PIN_Z, HIGH);
-    delayMicroseconds(Z_MICRO_TIME);
+    zTimer.doDelay();
     digitalWrite(STEP_PIN_Z, LOW);
-    delayMicroseconds(Z_MICRO_TIME);
+    zTimer.doDelay();
   }
 }
 
@@ -133,9 +143,9 @@ void moveClawDown(uint16_t stepCount)
   for(int i = 0; i<stepCount; i++)
   {
     digitalWrite(STEP_PIN_Z, HIGH);
-    delayMicroseconds(Z_MICRO_TIME);
+    zTimer.doDelay();
     digitalWrite(STEP_PIN_Z, LOW);
-    delayMicroseconds(Z_MICRO_TIME);
+    zTimer.doDelay();
   }
 }
 
@@ -169,9 +179,13 @@ void calibration()
 {
   while(msgMove.getClawCalibState() < (Claw_Calibration::CLAW_CALIB_TOP_DONE | Claw_Calibration::CLAW_CALIB_DOWN_DONE )) //if calib done top and down are set they are the biggest number possible
   {
+    Serial.println("In the < top | down done while loop");
+
     //setting the top position for the claw since it does not have a limiter
     while(containsGivenBits(msgMove.getClawCalibState(), Claw_Calibration::CLAW_CALIB_TOP_STATE_IN_PROGRESS))
     {
+      Serial.println("Top state in progress.");
+
       if (msgMove.getY() == Y_Direction::UP)
       {
         moveClawUp(Z_DIRECTION_STEP_COUNT);
@@ -182,10 +196,10 @@ void calibration()
       }
       if (msgMove.getButtonState() == Main_Button::PUSHED)
       {
+        zDirectionMaxStepCountRange = 0;
         msgMove.topCalibDone();
         //msgMove.sendMsgToNano(); //not yet implemented
         //we are done with the Top position calibration:
-        zDirectionMaxStepCountRange = 0;
       }
 
       msgMove.setDefaultValues(); //making sure that if we loose connection, everything stops
@@ -199,6 +213,8 @@ void calibration()
 
     while(containsGivenBits(msgMove.getClawCalibState(), Claw_Calibration::CLAW_CALIB_DOWN_STATE_IN_PROGRESS))
     {
+      Serial.println("DOWN state in progress.");
+
       if (msgMove.getY() == Y_Direction::UP)
       {
         moveClawUp(Z_DIRECTION_STEP_COUNT);
@@ -230,6 +246,8 @@ void calibration()
 
 void requestEvent()
 {
+      Serial.println("REQUEST EVENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
   msgMove.refreshMovementState(zDirectionMaxStepCountRange);
   MovementDataPack toBeSent = msgMove.getMovementState();
   Wire.write((byte*)&toBeSent, sizeof(MovementDataPack));
@@ -239,10 +257,12 @@ void loop()
 {
   if (msgMove.getClawCalibState() == Claw_Calibration::CLAW_CALIB_INIT)
   {
+    Serial.println("Starting calibration");
     calibration();
   }
   else
   {
+    //Serial.println("Checking movement");
     if (msgMove.getX() == X_Direction::LEFT)            moveLeft(X_DIRECTION_STEP_COUNT);
     if (msgMove.getX() == X_Direction::RIGHT)           moveRight(X_DIRECTION_STEP_COUNT);
     if (msgMove.getY() == Y_Direction::UP)              moveUp(Y_DIRECTION_STEP_COUNT);
