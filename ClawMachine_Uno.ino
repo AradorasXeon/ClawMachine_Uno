@@ -1,5 +1,5 @@
 //Motor control video: https://www.youtube.com/watch?v=7spK_BkMJys
-
+#define DEBUG
 #include <Wire.h>
 #include "/home/krisztian/arduino/ClawMachine_Nano/communication.h"
 #include "/home/krisztian/arduino/ClawMachine_Nano/timer.h"
@@ -70,7 +70,10 @@ void setup()
   Wire.onRequest(requestEvent);
 
   //Debug:
+  #ifdef DEBUG
   Serial.begin(115200);
+  Serial.println("SETUP RAN.");
+  #endif // DEBUG
 }
 
 void moveLeft(uint16_t stepCount)
@@ -179,12 +182,16 @@ void calibration()
 {
   while(msgMove.getClawCalibState() < (Claw_Calibration::CLAW_CALIB_TOP_DONE | Claw_Calibration::CLAW_CALIB_DOWN_DONE )) //if calib done top and down are set they are the biggest number possible
   {
+    #ifdef DEBUG
     Serial.println("In the < top | down done while loop");
+    #endif // DEBUG
 
     //setting the top position for the claw since it does not have a limiter
     while(containsGivenBits(msgMove.getClawCalibState(), Claw_Calibration::CLAW_CALIB_TOP_STATE_IN_PROGRESS))
     {
+      #ifdef DEBUG
       Serial.println("Top state in progress.");
+      #endif // DEBUG
 
       if (msgMove.getY() == Y_Direction::UP)
       {
@@ -206,14 +213,13 @@ void calibration()
     }
 
     //calib state is constantly read from NANO side
-    
-    //msgMove.startDownCalib(); SHOULD BE DONE FROM NANO SIDE, IT ALSO NEEDS COUNTING FOR TIME ESTIMATION
-    //msgMove.sendMsgToNano();
     //delay(1);
 
     while(containsGivenBits(msgMove.getClawCalibState(), Claw_Calibration::CLAW_CALIB_DOWN_STATE_IN_PROGRESS))
     {
+      #ifdef DEBUG
       Serial.println("DOWN state in progress.");
+      #endif // DEBUG
 
       if (msgMove.getY() == Y_Direction::UP)
       {
@@ -246,7 +252,9 @@ void calibration()
 
 void requestEvent()
 {
-      Serial.println("REQUEST EVENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+  #ifdef DEBUG
+  Serial.println("REQUEST EVENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+  #endif // DEBUG
 
   msgMove.refreshMovementState(zDirectionMaxStepCountRange);
   MovementDataPack toBeSent = msgMove.getMovementState();
@@ -257,12 +265,16 @@ void loop()
 {
   if (msgMove.getClawCalibState() == Claw_Calibration::CLAW_CALIB_INIT)
   {
+    #ifdef DEBUG
     Serial.println("Starting calibration");
+    #endif // DEBUG
     calibration();
   }
   else
   {
-    //Serial.println("Checking movement");
+    #ifdef DEBUG
+    Serial.println("Checking movement");
+    #endif // DEBUG
     if (msgMove.getX() == X_Direction::LEFT)            moveLeft(X_DIRECTION_STEP_COUNT);
     if (msgMove.getX() == X_Direction::RIGHT)           moveRight(X_DIRECTION_STEP_COUNT);
     if (msgMove.getY() == Y_Direction::UP)              moveUp(Y_DIRECTION_STEP_COUNT);
