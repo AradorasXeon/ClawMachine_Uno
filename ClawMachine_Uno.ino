@@ -1,6 +1,7 @@
 //Motor control video: https://www.youtube.com/watch?v=7spK_BkMJys
 #define DEBUG
 #include <Wire.h>
+#include "/home/krisztian/arduino/ClawMachine_Nano/millisTimer.hpp"
 #include "/home/krisztian/arduino/ClawMachine_Nano/communication.h"
 #include "/home/krisztian/arduino/ClawMachine_Nano/timer.h"
 //#include "/home/krisztian/arduino/ClawMachine_Nano/millisTimer.h"
