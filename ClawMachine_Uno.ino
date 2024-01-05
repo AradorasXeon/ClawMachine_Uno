@@ -1,4 +1,5 @@
 //Motor control video: https://www.youtube.com/watch?v=7spK_BkMJys
+
 #define DEBUG
 #include <Wire.h>
 #include "/home/krisztian/arduino/ClawMachine_Nano/millisTimer.hpp"
@@ -76,6 +77,8 @@ void setup()
   Serial.println("SETUP RAN.");
   #endif // DEBUG
 }
+
+// I WILL have to put something here to check which X or Y limiter was pushed 
 
 void moveLeft(uint16_t stepCount)
 {
@@ -181,28 +184,28 @@ bool containsGivenBits(uint8_t inThis, uint8_t contained)
 
 void calibration()
 {
-  while(msgMove.getClawCalibState() < (Claw_Calibration::CLAW_CALIB_TOP_DONE | Claw_Calibration::CLAW_CALIB_DOWN_DONE )) //if calib done top and down are set they are the biggest number possible
+  while(Move::isClawCalibSet(msgMove.getMovementControllState().controllCallibState, Claw_Calibration::CLAW_CALIB_INIT))
   {
     #ifdef DEBUG
-    Serial.println("In the < top | down done while loop");
+    //Serial.println("In the < top | down done while loop");
     #endif // DEBUG
 
     //setting the top position for the claw since it does not have a limiter
-    while(containsGivenBits(msgMove.getClawCalibState(), Claw_Calibration::CLAW_CALIB_TOP_STATE_IN_PROGRESS))
+    while(Move::isClawCalibSet(msgMove.getMovementControllState().controllCallibState, Claw_Calibration::CLAW_CALIB_TOP_STATE_IN_PROGRESS))
     {
       #ifdef DEBUG
       Serial.println("Top state in progress.");
       #endif // DEBUG
 
-      if (msgMove.getY() == Y_Direction::UP)
+      if (Move::isClawControllSet(msgMove.getClawControllState(), Claw_Controll_State::CLAW_CONTROLL_STATE_UP))
       {
         moveClawUp(Z_DIRECTION_STEP_COUNT);
       }
-      if (msgMove.getY() == Y_Direction::DOWN)
+      if (Move::isClawControllSet(msgMove.getClawControllState(), Claw_Controll_State::CLAW_CONTROLL_STATE_DOWN))
       {
         moveClawDown(Z_DIRECTION_STEP_COUNT);
       }
-      if (msgMove.getButtonState() == Main_Button::PUSHED)
+      if (Move::isClawControllSet(msgMove.getClawControllState(), Claw_Controll_State::CLAW_CONTROLL_STATE_BUTTON))
       {
         zDirectionMaxStepCountRange = 0;
         msgMove.topCalibDone();
@@ -216,23 +219,23 @@ void calibration()
     //calib state is constantly read from NANO side
     //delay(1);
 
-    while(containsGivenBits(msgMove.getClawCalibState(), Claw_Calibration::CLAW_CALIB_DOWN_STATE_IN_PROGRESS))
+    while(Move::isClawCalibSet(msgMove.getMovementControllState().controllCallibState, Claw_Calibration::CLAW_CALIB_DOWN_STATE_IN_PROGRESS))
     {
       #ifdef DEBUG
       Serial.println("DOWN state in progress.");
       #endif // DEBUG
 
-      if (msgMove.getY() == Y_Direction::UP)
+      if (Move::isClawControllSet(msgMove.getClawControllState(), Claw_Controll_State::CLAW_CONTROLL_STATE_UP))
       {
         moveClawUp(Z_DIRECTION_STEP_COUNT);
         zDirectionMaxStepCountRange -= Z_DIRECTION_STEP_COUNT;
       }
-      if (msgMove.getY() == Y_Direction::DOWN)
+      if (Move::isClawControllSet(msgMove.getClawControllState(), Claw_Controll_State::CLAW_CONTROLL_STATE_DOWN))
       {
         moveClawDown(Z_DIRECTION_STEP_COUNT);
         zDirectionMaxStepCountRange += Z_DIRECTION_STEP_COUNT;
       }
-      if (msgMove.getButtonState() == Main_Button::PUSHED)
+      if (Move::isClawControllSet(msgMove.getClawControllState(), Claw_Controll_State::CLAW_CONTROLL_STATE_BUTTON))
       {
         if(zDirectionMaxStepCountRange > 0)
         {
@@ -254,34 +257,40 @@ void calibration()
 void requestEvent()
 {
   #ifdef DEBUG
-  Serial.println("REQUEST EVENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    Serial.println("REQUEST EVENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
   #endif // DEBUG
 
   msgMove.refreshMovementState(zDirectionMaxStepCountRange);
-  MovementDataPack toBeSent = msgMove.getMovementState();
+  MovementDataPack toBeSent = msgMove.getMovementStateFromUno();
   Wire.write((byte*)&toBeSent, sizeof(MovementDataPack));
+
+  #ifdef DEBUG
+    Serial.print("Sent: ");
+    Serial.println(static_cast<uint8_t>(toBeSent.calibState), BIN);
+  #endif // DEBUG
 }
 
 void loop() 
 {
-  if (msgMove.getClawCalibState() == Claw_Calibration::CLAW_CALIB_INIT)
+  if(Move::isClawCalibSet(msgMove.getMovementControllState().controllCallibState, Claw_Calibration::CLAW_CALIB_INIT))
   {
     #ifdef DEBUG
-    Serial.println("Starting calibration");
+      Serial.println("Starting calibration");
     #endif // DEBUG
     calibration();
   }
   else
   {
     #ifdef DEBUG
-    Serial.println("Checking movement");
+      Serial.println("Checking movement");
     #endif // DEBUG
-    if (msgMove.getX() == X_Direction::LEFT)            moveLeft(X_DIRECTION_STEP_COUNT);
-    if (msgMove.getX() == X_Direction::RIGHT)           moveRight(X_DIRECTION_STEP_COUNT);
-    if (msgMove.getY() == Y_Direction::UP)              moveUp(Y_DIRECTION_STEP_COUNT);
-    if (msgMove.getY() == Y_Direction::DOWN)            moveDown(Y_DIRECTION_STEP_COUNT);
-    if (msgMove.getClaw() == Claw_Direction::CLAW_UP)   moveClawUp(Z_DIRECTION_STEP_COUNT);
-    if (msgMove.getClaw() == Claw_Direction::CLAW_DOWN) moveClawDown(Z_DIRECTION_STEP_COUNT);
+
+    if (Move::isClawControllSet(msgMove.getClawControllState(), Claw_Controll_State::CLAW_CONTROLL_STATE_LEFT))            moveLeft(X_DIRECTION_STEP_COUNT);
+    if (Move::isClawControllSet(msgMove.getClawControllState(), Claw_Controll_State::CLAW_CONTROLL_STATE_RIGHT))           moveRight(X_DIRECTION_STEP_COUNT);
+    if (Move::isClawControllSet(msgMove.getClawControllState(), Claw_Controll_State::CLAW_CONTROLL_STATE_UP))              moveUp(Y_DIRECTION_STEP_COUNT);
+    if (Move::isClawControllSet(msgMove.getClawControllState(), Claw_Controll_State::CLAW_CONTROLL_STATE_DOWN))            moveDown(Y_DIRECTION_STEP_COUNT);
+    //OLD if (msgMove.getClaw() == Claw_Direction::CLAW_UP)   moveClawUp(Z_DIRECTION_STEP_COUNT);
+    //OLD if (msgMove.getClaw() == Claw_Direction::CLAW_DOWN) moveClawDown(Z_DIRECTION_STEP_COUNT);
     //put full claw action here with zDirection max range
   }
   msgMove.setDefaultValues(); //making sure that if we loose connection, everything stops
